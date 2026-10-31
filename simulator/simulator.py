@@ -42,7 +42,33 @@ class Cluster:
         self.free = np.vstack([self.free[1:],
                                np.full((1, self.free.shape[1]), self.capacity, dtype=int)])
 
+class WorkloadGenerator:
+    """Creates jobs following the workload in the paper (Sec. 4.1), in integer units."""
 
+    def __init__(self, p_arrival, rng=None):
+        self.p = p_arrival                      # probability a job arrives each timestep
+        self.rng = rng if rng is not None else np.random.default_rng()
+        self.next_id = 0
+
+    def sample(self, t):
+        """Return a new Job with probability p, otherwise None."""
+        if self.rng.random() >= self.p:
+            return None
+
+        # 80% short jobs (1-3 steps), 20% long jobs (10-15 steps)
+        if self.rng.random() < 0.8:
+            duration = int(self.rng.integers(1, 4))
+        else:
+            duration = int(self.rng.integers(10, 16))
+
+        # one dominant resource (3-5 units), the other needs 1 unit
+        demand = np.ones(N_RES, dtype=int)
+        dominant = int(self.rng.integers(0, N_RES))
+        demand[dominant] = int(self.rng.integers(3, 6))
+
+        job = Job(self.next_id, arrival=t, duration=duration, demand=demand)
+        self.next_id += 1
+        return job
 
 
 
