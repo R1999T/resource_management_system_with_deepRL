@@ -1,0 +1,65 @@
+import numpy as np
+from dataclasses import dataclass, field
+from typing import Optional
+
+CAPACITY = 10      # units per resource (our integer-unit choice)
+HORIZON = 20       # lookahead rows in the cluster image (paper, Sec. 4.1)
+N_RES = 2          # CPU and memory
+
+
+@dataclass
+class Job:
+    job_id: int
+    arrival: int                 # timestep the job arrived
+    duration: int                # T_j
+    demand: np.ndarray           # units needed per resource, e.g. [4, 1]
+    start: Optional[int] = None  # timestep the job starts running
+    finish: Optional[int] = None # timestep the job completes
+
+
+class Cluster:
+    """Free units per future timestep. Row 0 = now, row 1 = next step, ..."""
+
+    def __init__(self, horizon=HORIZON, capacity=CAPACITY, n_res=N_RES):
+        self.horizon = horizon
+        self.capacity = capacity
+        self.free = np.full((horizon, n_res), capacity, dtype=int)
+
+    def find_start(self, job):
+        """First row offset where the job fits for its whole duration, else None."""
+        for t in range(self.horizon - job.duration + 1):
+            window = self.free[t:t + job.duration]       # rows the job would occupy
+            if np.all(window >= job.demand):             # every row, every resource
+                return t
+        return None
+
+    def place(self, job, t):
+        """Reserve the job's demand in rows t .. t+duration-1."""
+        self.free[t:t + job.duration] -= job.demand
+
+    def advance(self):
+        """Time moves one step: drop row 0, add a fully free row at the bottom."""
+        self.free = np.vstack([self.free[1:],
+                               np.full((1, self.free.shape[1]), self.capacity, dtype=int)])
+
+
+
+
+
+
+if __name__ == "__main__":
+    # Test: the seat example from our chat (CPU column only varies)
+    c = Cluster(horizon=6)
+    c.free[:, 0] = [3, 6, 6, 10, 10, 10]
+
+    j1 = Job(1, arrival=0, duration=2, demand=np.array([4, 1]))
+    t1 = c.find_start(j1)
+    print("j1 starts at row offset:", t1)           # expect 1 (second row)
+    c.place(j1, t1)
+    print("CPU free after j1:", c.free[:, 0])       # expect [3 2 2 10 10 10]
+
+    j2 = Job(2, arrival=0, duration=3, demand=np.array([3, 1]))
+    print("j2 starts at row offset:", c.find_start(j2))   # expect 3 (fourth row)
+
+    c.advance()
+    print("CPU free after advance:", c.free[:, 0])  # expect [2 2 10 10 10 10]
