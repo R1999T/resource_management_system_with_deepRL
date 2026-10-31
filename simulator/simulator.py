@@ -71,6 +71,69 @@ class WorkloadGenerator:
         return job
 
 
+class SchedulerEnv:
+    """Action 0 = void; action i (1..M) = schedule the job in slot i."""
+
+    def __init__(self, p_arrival=0.7, M=10, episode_len=50, max_t=500, seed=None):
+        self.p = p_arrival
+        self.M = M
+        self.episode_len = episode_len
+        self.max_t = max_t
+        self.rng = np.random.default_rng(seed)
+        self.reset()
+
+    def reset(self):
+        self.t = 0
+        self.cluster = Cluster()
+        self.gen = WorkloadGenerator(self.p, self.rng)
+        self.queue = []      # waiting jobs, in arrival order (first M are visible slots)
+        self.running = []    # scheduled jobs that have not finished yet
+        self.finished = []
+        self._arrive()
+        return self.get_state()
+
+    def _arrive(self):
+        if self.t < self.episode_len:
+            job = self.gen.sample(self.t)
+            if job is not None:
+                self.queue.append(job)
+
+    def get_state(self):
+        slots = [(j.duration, j.demand.copy()) for j in self.queue[:self.M]]
+        backlog = max(0, len(self.queue) - self.M)
+        return {"free": self.cluster.free.copy(), "slots": slots, "backlog": backlog}
+
+    def step(self, action):
+        # 1) try to schedule a job (time stays frozen)
+        if 1 <= action <= self.M and action - 1 < len(self.queue):
+            job = self.queue[action - 1]
+            offset = self.cluster.find_start(job)
+            if offset is not None:
+                self.cluster.place(job, offset)
+                job.start = self.t + offset
+                job.finish = job.start + job.duration
+                self.queue.pop(action - 1)
+                self.running.append(job)
+                return self.get_state(), 0.0, False
+
+        # 2) void or invalid action: time moves forward one step
+        in_system = self.queue + [j for j in self.running if j.finish > self.t]
+        reward = -sum(1.0 / j.duration for j in in_system)
+
+        self.cluster.advance()
+        self.t += 1
+        done_now = [j for j in self.running if j.finish <= self.t]
+        for j in done_now:
+            self.running.remove(j)
+            self.finished.append(j)
+        self._arrive()
+
+        done = (self.t >= self.episode_len and not self.queue and not self.running) \
+               or self.t >= self.max_t
+        return self.get_state(), reward, done
+
+
+
 
 
 if __name__ == "__main__":
