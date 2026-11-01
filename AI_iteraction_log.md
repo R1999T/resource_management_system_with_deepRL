@@ -76,6 +76,14 @@ everything submitted. Fill in the date and commit hash for each entry when commi
 - The `start` row for state 1 in the Task 1 policy-iteration code was changed by us so the CPU becomes Busy with certainty.
 - AI first stated that the Task 1 deadline (Oct 29) was the current day when it was Oct 31; it noticed and corrected this later. Confirm the deadline with the instructor.
 
+task1:
+
+Why this fixes the issue:
+
+• No Absorbing Loops: In your original wait matrix, once you hit FREE_JOB_WAITING, you could never leave it if you kept choosing WAIT. Changing it to 0.95 and 0.05 allows algorithms to evaluate alternative pathways safely.
+• Maintains Intent: The system still behaves exactly how you originally designed it 95% of the time, meaning your reward optimization policy will yield the correct logical behavior without breaking the math background.
+
+
 ## References
 
 1. H. Mao et al., Resource Management with Deep Reinforcement Learning, HotNets-XV, 2016.
