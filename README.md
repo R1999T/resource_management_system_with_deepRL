@@ -17,10 +17,10 @@ Run every command below from the folder that contains `simulator.py`.
 
 ## 1. Task 1: small MDP solved by policy iteration
 
-**File:** `task1_policy_iteration.py` (use the actual file name in the repository).
+**File:** `task1_mdp_formulation_using_value_iteration.ipynb`.
 
-```bash
-python3 task1_policy_iteration.py
+```jupyter notebook
+run the file in jupyter notebook to see the output
 ```
 
 **Expected output:**
