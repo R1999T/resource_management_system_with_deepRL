@@ -56,6 +56,28 @@ Actions are WAIT and START. START is only valid in state 1. Reward is -0.5 per j
 
 ## 2. Task 2: the cluster simulator
 
+```mermaid
+flowchart TD
+    A["reset(): empty cluster, t = 0, first job"] --> B["Policy picks action a<br/>0 = void, 1..M = slot"]
+    B --> C{"Valid slot,<br/>job fits?"}
+    C -- "yes" --> D["Place the job<br/>reward = 0, time frozen"]
+    D --> B
+    C -- "no (void or invalid)" --> E["Time moves one step<br/>reward = minus sum of 1/T"]
+    E --> F["Update the system<br/>shift cluster, new arrival"]
+    F --> G{"Episode over?"}
+    G -- "no" --> B
+    G -- "yes" --> H["Finish episode<br/>slowdown of each job"]
+
+    classDef agent fill:#EEEDFE,stroke:#534AB7,color:#3C3489
+    classDef sim fill:#E1F5EE,stroke:#0F6E56,color:#085041
+    classDef neutral fill:#F1EFE8,stroke:#5F5E5A,color:#444441
+    class B agent
+    class D,E,F sim
+    class A,C,G,H neutral
+```
+
+
+
 Four files, run in this order. Each one checks one more layer of the simulator.
 
 | Step | Command | What it checks |
