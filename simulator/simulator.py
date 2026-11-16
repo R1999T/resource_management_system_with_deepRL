@@ -37,6 +37,7 @@ class Cluster:
         """Reserve the job's demand in rows t .. t+duration-1."""
         self.free[t:t + job.duration] -= job.demand
 
+    # t->time step yaha pe increment ho rahah eh
     def advance(self):
         """Time moves one step: drop row 0, add a fully free row at the bottom."""
         self.free = np.vstack([self.free[1:],
@@ -55,6 +56,7 @@ class WorkloadGenerator:
         if self.rng.random() >= self.p:
             return None
 
+        #if job came
         # 80% short jobs (1-3 steps), 20% long jobs (10-15 steps)
         if self.rng.random() < 0.8:
             duration = int(self.rng.integers(1, 4))
@@ -82,8 +84,11 @@ class SchedulerEnv:
         self.rng = np.random.default_rng(seed)
         self.reset()
 
-    def reset(self):
+    def reset(self, seed=None):
+        if seed is not None:
+            self.rng = np.random.default_rng(seed)
         self.t = 0
+
         self.cluster = Cluster()
         self.gen = WorkloadGenerator(self.p, self.rng)
         self.queue = []      # waiting jobs, in arrival order (first M are visible slots)
@@ -99,10 +104,12 @@ class SchedulerEnv:
                 self.queue.append(job)
 
     def get_state(self):
+        #queue ke har job j ke liye ek tuple (j.duration, j.demand.copy()) banao, aur sabko list slots mein daalo.
         slots = [(j.duration, j.demand.copy()) for j in self.queue[:self.M]]
         backlog = max(0, len(self.queue) - self.M)
         return {"free": self.cluster.free.copy(), "slots": slots, "backlog": backlog}
 
+    # calculate reward and return it
     def step(self, action):
         # 1) try to schedule a job (time stays frozen)
         if 1 <= action <= self.M and action - 1 < len(self.queue):
@@ -137,7 +144,7 @@ class SchedulerEnv:
 
 
 if __name__ == "__main__":
-    # Test: the seat example from our chat (CPU column only varies)
+    # Test:
     c = Cluster(horizon=6)
     c.free[:, 0] = [3, 6, 6, 10, 10, 10]
 

@@ -4,11 +4,11 @@ from simulator import SchedulerEnv
 env = SchedulerEnv(p_arrival=0.7, seed=0)
 rng = np.random.default_rng(1)
 
-for ep in range(5):
+for ep in range(5): #for 5 episodes(just for testing)
     env.reset()
     total, done = 0.0, False
     while not done:
-        a = int(rng.integers(0, env.M + 1))      # random action in {0, 1, ..., M}
+        a = int(rng.integers(0, env.M + 1))      # random action to pick a job id in {0, 1, ..., M}
         _, r, done = env.step(a)
         total += r
     slow = [(j.finish - j.arrival) / j.duration for j in env.finished]

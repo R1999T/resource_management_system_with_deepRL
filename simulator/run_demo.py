@@ -25,13 +25,13 @@ def run_episode(policy, seed=0, p=0.7):
     cum, done = 0.0, False
     while not done:
         t_before = env.t
-        _, r, done = env.step(policy(env, rng))
+        _, r, done = env.step(policy(env, rng)) #here policy is variable, (random or sjf) 
         cum += r
         if env.t != t_before:                        # time moved: record one point per timestep
             log["t"].append(env.t)
             log["waiting"].append(len(env.queue))
             log["util"].append(1 - env.cluster.free[0].mean() / CAPACITY)
-            log["cum_reward"].append(cum)
+            log["cum_reward"].append(cum) #cumulative reward
     slow = [(j.finish - j.arrival) / j.duration for j in env.finished]
     return log, float(np.mean(slow)), len(slow)
 
