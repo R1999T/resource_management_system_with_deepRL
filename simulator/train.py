@@ -1,3 +1,4 @@
+import numpy as np
 from simulator import SchedulerEnv
 from encoder import encode
 from policy import PolicyNet
@@ -27,9 +28,23 @@ def compute_returns(rewards, gamma=1.0):
     return returns
 
 
+def compute_advantages(all_returns):
+    """all_returns: list of N return lists (same jobset, different lengths).
+    Baseline b_t = mean over episodes of v_t, with short episodes padded by zeros
+    (see OUR_DECISIONS_baseline_padding.md). Returns one advantage list per episode."""
+    maxlen = max(len(r) for r in all_returns)
+    padded = [np.concatenate([r, np.zeros(maxlen - len(r))]) for r in all_returns]
+    baseline = np.mean(padded, axis=0)
+    return [np.array(r) - baseline[:len(r)] for r in all_returns]
+
+
 if __name__ == "__main__":
     print(compute_returns([-4, -1, -2]))          # expect [-7.0, -3.0, -2.0]
     print(compute_returns([-1, -2, -3], 0.5))     # expect [-2.75, -3.5, -3.0]
+
+    advs = compute_advantages([[-9, -6, -3], [-15, -12, -9, -6, -3]])
+    print(advs[0])                                # expect [3. 3. 3.]
+    print(advs[1])                                # expect [-3. -3. -3. -3. -1.5]
 
     env = SchedulerEnv()
     net = PolicyNet()
