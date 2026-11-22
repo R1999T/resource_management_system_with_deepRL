@@ -1,0 +1,5 @@
+policy,n_seeds,mean_slowdown,ci_low,ci_high,mean_total_reward,cap_hits
+Random,100,5.299,5.108,5.49,-184.92,0
+SJF,100,1.693,1.589,1.798,-59.24,0
+Agent (argmax),100,2.07,1.906,2.234,-106.83,95
+Agent (sample),100,2.19,2.036,2.343,-76.89,0
