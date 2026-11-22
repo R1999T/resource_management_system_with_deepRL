@@ -1,4 +1,4 @@
-# How to run and verify Task 1 and Task 2
+# How to run and verify Task 1, Task 2 and the agent
 
 This guide is for a reader who has not seen the code before. Each step says what to run, what you should see, and what it means.
 
@@ -10,10 +10,11 @@ This guide is for a reader who has not seen the code before. Each step says what
 python3 --version              # needs Python 3.8 or newer
 python3 -m venv venv
 source venv/bin/activate       # Windows: venv\Scripts\activate
-pip install numpy matplotlib
+pip install numpy matplotlib   # Tasks 1 and 2
+pip install torch scipy        # the agent (section 3); CPU torch is enough
 ```
 
-Run every command below from the folder that contains `simulator.py`.
+Run every command below from the folder that contains `simulator.py` (the `simulator/` folder).
 
 ## 1. Task 1: small MDP solved by policy iteration
 
@@ -132,12 +133,14 @@ SJF    : jobs finished = 37, average slowdown = 2.83, final cumulative reward = 
 saved sample_path.pdf and sample_path.png
 ```
 
+The two figure files are written to `../results/figures/`.
+
 Two policies face the **same 37 jobs** (same seed), so the comparison is fair.
 - **Random:** picks any action at random, including empty slots.
 - **SJF (Shortest Job First):** starts the shortest visible job that fits right now. This is a baseline heuristic from the paper.
 - Lower slowdown is better, and reward closer to zero is better. Cross-check: 6.29 x 37 is about 233, and 2.83 x 37 is about 105.
 
-**Reading the three graphs** in `sample_path.pdf` (x axis is the timestep in all three):
+**Reading the three graphs** in `../results/figures/sample_path.pdf` (x axis is the timestep in all three):
 
 1. **Waiting jobs:** jobs that have arrived but not yet been started. Both lines rise while jobs arrive faster than they are served (peak near 10 at about timestep 20). SJF drains the queue to 0 by about timestep 57, whereas Random keeps one job waiting until about timestep 118. A long wait means that job's slowdown is large.
 2. **Mean utilization:** the fraction of cluster units in use at that moment (averaged over CPU and memory). Both policies keep the cluster busy while there is work (0.5 to 1.0). Random is then mostly idle (0.0 to 0.3) while jobs still wait, which means it wasted capacity, and the episode drags on to about timestep 131 against about 72 for SJF.
@@ -146,7 +149,36 @@ Two policies face the **same 37 jobs** (same seed), so the comparison is fair.
 **What you can conclude:** the simulator behaves sensibly (a smarter rule gives a better score), and its reward matches the paper's objective.
 **What you cannot conclude:** that SJF is better in general. This is one episode per policy, so it is a demonstration. A performance claim needs many episodes with confidence intervals, which belongs to the later part of the project.
 
-## 3. Glossary
+## 3. The agent: training, evaluation and extensions
+
+Run all commands from the `simulator/` folder. The trained model `../results/models/policy.pt` is in the repository, so evaluation runs without training first. Results go to `../results/` (`models/`, `logs/`, `tables/`, `figures/`). Run times are rough, on a CPU.
+
+| Command | What it does | Time | Output |
+|---|---|---|---|
+| `python train.py` | Self-tests of returns, advantages, rollout and the update step | seconds | text in the terminal |
+| `python train.py train 20 10 300` | Trains the agent (jobsets, episodes per jobset, iterations; defaults 5 5 20) | about 1 hour for 20 10 300 | `policy.pt`, `history.npy`, one new row in `training_log.csv` |
+| `python evaluate.py 100` | Random, SJF and the agent (argmax and sampling, with and without invalid-action masking) on 100 unseen seeds (1000 to 1099), mean slowdown with 95% confidence interval | a few minutes | `tables/evaluation_results.csv` |
+| `python plot_eval.py` | Bar chart of that table | seconds | `figures/evaluation.png`, `.pdf` |
+| `python invalid_actions.py` | How often the agent picks an invalid action (empty slot or a job that cannot be placed) | a few minutes | `tables/invalid_actions.csv` |
+| `python load_sweep.py` | Slowdown at loads from about 10% to 102% (arrival probability p from 0.1 to 1.0) | about 10 minutes | `tables/load_sweep.csv`, `figures/load_sweep.png` |
+| `python load_sweep_high.py` | Same up to 190% load, with several Poisson arrivals per timestep (an extension, not the paper's arrival model) | about 10 minutes | `tables/load_sweep_high.csv`, `figures/load_sweep_high.png` |
+
+`train.py train` overwrites `../results/models/policy.pt`. Copy it first if you want to keep the current model.
+
+**Expected result of `evaluate.py 100`** with the included model (mean slowdown, lower is better):
+
+```
+Random                    5.299   [5.108, 5.490]
+SJF                       1.693   [1.589, 1.798]
+Agent (argmax)            1.751   [1.612, 1.891]   100 of 100 episodes hit the 500-timestep cap
+Agent (sample)            1.874   [1.744, 2.004]
+Agent (argmax, masked)    2.209   [2.036, 2.382]
+Agent (sample, masked)    2.213   [2.040, 2.385]
+```
+
+The slowdown counts only finished jobs, so the argmax value is misleading when episodes hit the cap. The mean total reward in the table shows the real cost. Sampling runs use a fixed torch seed, so small differences are possible across library versions.
+
+## 4. Glossary
 
 | Term | Meaning |
 |---|---|
@@ -158,12 +190,14 @@ Two policies face the **same 37 jobs** (same seed), so the comparison is fair.
 | Void action | "Stop scheduling this timestep". Time moves forward after it |
 | SJF | Shortest Job First baseline |
 
-## 4. Simplifications to know about
+## 5. Simplifications to know about
 
 - Task 1 and the simulator are our simplifications (integer capacity of 10 units per resource, one-slot Task 1 model, backlog cap of 60 jobs from the paper not enforced).
-- The paper's neural network agent and its training are **not** part of Tasks 1 and 2. They come in the later deliverables.
+- The paper's neural network agent and its training are **not** part of Tasks 1 and 2. They are in section 3. Our training is much smaller than the paper's (20 jobsets, 10 episodes, 300 iterations against 100, 20 and 1000), because we run on a CPU.
+- The agent is trained only at one load (arrival probability 0.7). Tetris* and Packer from the paper are not implemented.
+- Invalid-action masking and Poisson arrivals (loads above 102%) are extensions, not part of the paper. The design choices are in `OUR_DECISIONS_baseline_padding.md`, open points in `ptsneededpondering.md`.
 
-## 5. Troubleshooting
+## 6. Troubleshooting
 
 - `ImportError: cannot import name ...`: run the command from the folder that contains `simulator.py`, and make sure the file is saved.
 - `ModuleNotFoundError: numpy` or `matplotlib`: run `pip install numpy matplotlib` inside the activated environment.
