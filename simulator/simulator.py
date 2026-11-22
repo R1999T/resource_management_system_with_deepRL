@@ -72,6 +72,24 @@ class WorkloadGenerator:
         self.next_id += 1
         return job
 
+    def sample_many(self, t, lam):
+        """Extension (not in the paper): return a list of jobs, the number of arrivals in this
+        timestep being Poisson(lam). Needed for loads above about 102%, because sample() can
+        add at most one job per timestep. Job sizes follow the same rules as sample().
+        sample() is not changed. Load is about 1.025 * lam (see ptsneededpondering.md, point 2)."""
+        jobs = []
+        for _ in range(int(self.rng.poisson(lam))):
+            if self.rng.random() < 0.8:                         # 80% short jobs (1-3 steps)
+                duration = int(self.rng.integers(1, 4))
+            else:                                               # 20% long jobs (10-15 steps)
+                duration = int(self.rng.integers(10, 16))
+            demand = np.ones(N_RES, dtype=int)                  # one dominant resource (3-5 units)
+            dominant = int(self.rng.integers(0, N_RES))
+            demand[dominant] = int(self.rng.integers(3, 6))
+            jobs.append(Job(self.next_id, arrival=t, duration=duration, demand=demand))
+            self.next_id += 1
+        return jobs
+
 
 class SchedulerEnv:
     """Action 0 = void; action i (1..M) = schedule the job in slot i."""
