@@ -58,6 +58,6 @@ for ax in axes:
     ax.legend()
 fig.suptitle("Sample path of one episode (same job arrivals)")
 fig.tight_layout()
-fig.savefig("sample_path.pdf")
-fig.savefig("sample_path.png", dpi=200)
+fig.savefig("../results/figures/sample_path.pdf")
+fig.savefig("../results/figures/sample_path.png", dpi=200)
 print("saved sample_path.pdf and sample_path.png")
