@@ -1,0 +1,4 @@
+date,jobsets,episodes_per_jobset,iterations,time_seconds,final_mean_reward,final_mean_slowdown
+2026-11-20 19:13,5,5,20,49,-118.19,3.3
+2026-11-20 22:36,10,10,100,579,-76.93,2.17
+2026-11-21 22:12,20,10,300,3530,-59.96,1.7
