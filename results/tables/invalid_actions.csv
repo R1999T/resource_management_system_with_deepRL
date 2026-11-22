@@ -1,0 +1,9 @@
+model,mode,seeds,step_calls_per_episode,timesteps_per_episode,invalid_pct,invalid_pct_when_a_job_could_start
+small (10x10x100),sample,train seeds 0-9 (x10),114.1,79.0,68.5,60.4
+small (10x10x100),sample,unseen seeds 1000-1099,114.2,79.4,68.6,60.5
+small (10x10x100),argmax,train seeds 0-9 (x10),492.5,458.3,93.1,92.9
+small (10x10x100),argmax,unseen seeds 1000-1099,512.2,478.3,93.4,93.2
+final (20x10x300),sample,train seeds 0-9 (x10),115.5,80.4,69.4,61.1
+final (20x10x300),sample,unseen seeds 1000-1099,117.6,82.8,70.1,60.5
+final (20x10x300),argmax,train seeds 0-9 (x10),533.8,500.0,93.7,93.6
+final (20x10x300),argmax,unseen seeds 1000-1099,533.6,500.0,93.7,93.6
