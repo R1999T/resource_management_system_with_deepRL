@@ -125,7 +125,6 @@ Reading: the agent is much better than Random. SJF has the lower mean slowdown a
 | Backlog cap of 60 not enforced in the simulator | simulator | The encoder shows at most 60 backlog cells. |
 | ReLU activation | policy | The paper does not name it. |
 | Backlog as 60-cell image, vector size 4460 | encoder | Inferred from the 89,451 parameters in the paper. Say "inferred". |
-| Zero padding of returns when episodes differ in length | train | Matches the authors' released code (`hongzimao/deeprm`, `pg_re.py`), not stated in the paper text. |
 | gamma = 1 | train | Needed so that reward = minus slowdown. |
 | Smaller training | train | CPU only. |
 | Evaluation design: unseen seeds, same seeds for all policies, 95% CI from the t distribution, argmax and sampling both reported, cap hits counted | evaluate | See `OUR_DECISIONS_baseline_padding.md`. The paper does not say whether the agent samples or uses argmax at test time (we did not see it stated). |
@@ -140,6 +139,7 @@ Decisions about what goes into the report are not final. Items marked "proposed"
 - Page 4, Section 3.2 and 3.3: actions, time-freeze rule, reward = minus sum of 1/T_j, training algorithm in Figure 3.
 - Page 5, Section 4.1: one hidden layer with 20 neurons, 89,451 parameters, images 20 timesteps long, M = 10, backlog 60, 100 jobsets, N = 20 episodes per jobset, RMSprop with learning rate 0.001, 1000 iterations.
 - Page 5, Section 4.2 "Comparables": SJF allocates jobs in increasing order of duration. Packer allocates jobs "in increasing order of alignment between job demands and resource availability (same as the packing heuristic in [17])". Tetris* combines short-job preference and packing in one score. All are work-conserving. [17] is Grandl et al., "Multi-resource packing for cluster schedulers", SIGCOMM 2014. The paper gives no formulas. We did not implement Packer and Tetris*.
+- Page 4, footnote in the training algorithm: "Some episodes terminate earlier, thus we zero-pad them to make every episode equal-length L." Our zero-padding of returns in `compute_advantages` follows this (see `OUR_DECISIONS_baseline_padding.md`). It is not our own choice. (An earlier version of this note said the paper is silent. That was wrong.)
 - Figure 4: DeepRM, Tetris*, SJF, Packer and Random at loads from 10% to 190%.
 
 ## 9. Next steps

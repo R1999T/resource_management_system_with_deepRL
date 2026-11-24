@@ -1,6 +1,6 @@
-# Our decision: baseline with episodes of different length
+# Baseline with episodes of different length (follows the paper's footnote)
 
-This note records a choice that the paper does not specify. We made it ourselves and it should be mentioned in the report.
+The paper says in a footnote on page 4: "Some episodes terminate earlier, thus we zero-pad them to make every episode equal-length L." This note spells out how we apply that in the baseline. (Corrected on 2026-11-24: an earlier version of this note said that the paper does not describe this case. It does, in that footnote.)
 
 ## The problem
 
@@ -10,7 +10,7 @@ The training algorithm (paper, Figure 3, page 4) runs N episodes on the same job
 
 The jobs are the same in all N episodes, but the episodes do not have the same length. The agent picks different actions, so some episodes finish earlier. In our untrained runs on seed 0, one episode took 118 `env.step()` calls and another took 123.
 
-For a step t that lies beyond the end of a short episode, that episode has no return v_t. The paper does not say what to use in its place.
+For a step t that lies beyond the end of a short episode, that episode has no return v_t. The paper's footnote says to zero-pad, but it does not write out the formula for the padded baseline.
 
 Example with N = 2:
 
@@ -19,7 +19,7 @@ Example with N = 2:
 
 At steps 3 and 4 only episode 2 exists, so the average at those steps is not defined.
 
-## The fix we use
+## How we apply it
 
 Pad the returns of each short episode with zeros up to the length of the longest episode, then average step by step. A finished episode has no more penalty to collect, so a return of 0 after its end is a natural value.
 
@@ -33,9 +33,9 @@ The advantage of an episode is then taken only over its own length:
 
 ## Where this comes from
 
-- The paper text does not describe this case.
-- The authors' released code does it this way: `hongzimao/deeprm`, file `pg_re.py`, lines 194 to 202. It computes the discounted returns, pads them with zeros to the longest episode (`np.zeros(maxlen - len(ret))`), takes `np.mean(padded_rets, axis=0)` as the baseline, and uses `ret - baseline[:len(ret)]` as the advantage.
-- In the report, state that this follows the authors' released code and not the paper text.
+- The paper: footnote on page 4 (see the top of this note). We checked this in the PDF.
+- The authors' released code is said to do it the same way: `hongzimao/deeprm`, file `pg_re.py`, lines 194 to 202 (pads the returns with zeros to the longest episode, takes the mean as the baseline, and uses `ret - baseline[:len(ret)]` as the advantage). We have not re-checked that file ourselves, so verify it before citing it.
+- In the report, say that this follows the paper's footnote.
 
 ## Related detail
 
